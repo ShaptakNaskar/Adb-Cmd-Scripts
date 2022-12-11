@@ -14,3 +14,8 @@ These scripts heavily relies on Wireless Debugging.
 > Waits for User Input and Connects to WSA at 127.0.0.1:58526 (Requires Debugging to be enabled in WSA)  
 > Pushes pulled files to /sdcard/Pushed/ in WSA  
 > Pushes files from Videos (%userprofile%\Videos) to /sdcard/Pushed/UserVids/  
+
+## Install APK
+> Connects to the provided IP:PORT  
+> Opens File Picker Dialogue (To choose an APK file)  
+> Installs the APK
