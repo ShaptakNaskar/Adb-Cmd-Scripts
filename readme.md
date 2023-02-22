@@ -20,3 +20,7 @@ These scripts heavily relies on Wireless Debugging.
 > Connects to the provided IP:PORT  
 > Opens File Picker Dialogue (To choose an APK file)  
 > Installs the APK
+
+## ADB Backup
+This script is an ADB backup script that allows the user to pull every folder from their Android device's internal storage (except for a specified folder) and put it in a local directory. It also asks the user if they want to backup their WhatsApp folder, and provides instructions on how to modify the excluded_folder and local_directory values in the script if desired.
+>
