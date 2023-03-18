@@ -1,7 +1,7 @@
 @echo off
 title ADB-CMD Backup Script
 mkdir Pulled
-adb disconnect
+#adb disconnect
 adb devices
 cls
 
