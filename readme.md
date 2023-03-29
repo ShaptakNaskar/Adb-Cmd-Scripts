@@ -1,5 +1,9 @@
 # ADB-CMD Scripts
 ## These are scripts I use for my specific usecase, It might be of no use to you :)
+<p align="center">
+  <a href="http://forthebadge.com/"><img src="https://forthebadge.com/images/badges/0-percent-optimized.svg" alt="forthebadge"/></a>
+  <a href="http://forthebadge.com/"><img src="https://forthebadge.com/images/badges/it-works-why.svg" alt="forthebadge"/></a>
+</p>
 
 This repository contains Scripts which utilises CMD as the command processor and ADB to interface with Android Devices
 
