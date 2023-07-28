@@ -8,9 +8,9 @@ set local_directory="Pulled"
 echo Welcome to ADB-CMD Backup Restore Script
 :askbr
 set /p cho8=Enter B for Backup, R for Restore:
-if /i "%cho1%"=="B" (
+if /i "%cho8%"=="B" (
 goto bcup
-) else if /i "%cho1%"=="R" (
+) else if /i "%cho8%"=="R" (
     goto res
 ) else (
     echo Invalid choice. Please B for Backup, R for Restore.
