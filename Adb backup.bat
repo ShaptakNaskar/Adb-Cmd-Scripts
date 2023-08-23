@@ -134,3 +134,4 @@ if /i "%cho2%"=="Y" (
 
 :exit
 echo Exiting the script...
+pause
