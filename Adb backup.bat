@@ -20,7 +20,6 @@ goto bcup
 
 echo This part of the script will pull every folder from your Internal Storage
 echo (except the %excluded_folder% folder) and put it in %local_directory% folder
-echo Additionally This will also ask if you want to Backup your Whatsapp Folder(A11+)
 pause
 cls
 echo Want to make changes? Open this file in a text editor, and change
@@ -54,21 +53,8 @@ for /f "tokens=* delims= " %%a in ('adb shell ls /sdcard/ ^| findstr /V %exclude
     pause
   )
 )
-
-:WP
-echo Do you want to Backup Whatsapp Folder (Y/N) (A11+ /sdcard/Android/media/com.whatsapp)
-
-set /p choice56=Enter choice: 
-
-if "%choice56%"=="Y" (
 mkdir "%local_directory%\Android\media\" && cd "%local_directory%\Android\media\" &&  adb pull -a /sdcard/Android/media/com.whatsapp/
-) else if "%choice56%"=="N" (
-echo OKAY
-echo Thanks For using this script
-) else (
-    echo Invalid choice. Please enter Y or N.
-goto WP
-)
+pause
 echo All folders pulled successfully!
 cls
 echo Press any key to go back to main menu
