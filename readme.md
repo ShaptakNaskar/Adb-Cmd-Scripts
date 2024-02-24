@@ -27,5 +27,41 @@ These scripts heavily relies on Wireless Debugging.
 > Installs the APK
 
 ## ADB Backup
->This script is an ADB backup script that allows the user to pull every folder from their Android device's internal storage (except for a specified folder) and put it in a local directory. It also asks the user if they want to backup their WhatsApp folder, and provides instructions on how to modify the excluded_folder and local_directory values in the script if desired.
+### 1. Initialization:
+
+> Turns off command echoing for a cleaner display.
+> Sets the window title to "ADB-CMD Backup Restore Script".
+> Creates a folder named "Pulled" for backups.
+> Checks for connected Android devices using adb devices.
+
+### 2. User Prompt:
+
+> Presents a menu asking for backup (B) or restore (R) operation.
+> Validates user input to ensure a valid choice.
+
+### 3. Backup Function (:bcup):
+
+> Explains the backup process and customization options.
+> Lists folders on the Android device's internal storage.
+> Excludes the specified folder (default: "Android").
+> Filters out files with ".nomedia" in their names.
+> Confirms the backup plan with the user.
+> Pulls all folders (except the excluded one) to the "Pulled" folder.
+> Specifically pulls WhatsApp media and Call Recorder files.
+> Reports successful completion.
+
+### 4. Restore Function (:res):
+
+> Confirms the user's intention to restore files.
+> Explains the restore process.
+> Navigates to the appropriate directory based on WhatsApp backup status.
+> Verifies the selected directory with the user.
+> Lists files to be restored for confirmation.
+> Pushes all files from the current directory to the Android device's /sdcard/.
+> Installs a DataBackup.apk file 
+> Reports successful completion.
+
+
+
+
 
