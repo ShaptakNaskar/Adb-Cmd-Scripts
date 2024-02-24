@@ -54,6 +54,11 @@ for /f "tokens=* delims= " %%a in ('adb shell ls /sdcard/ ^| findstr /V %exclude
   )
 )
 mkdir "%local_directory%\Android\media\" && cd "%local_directory%\Android\media\" &&  adb pull -a /sdcard/Android/media/com.whatsapp/
+cd ..
+cd ..
+mkdir Recordings
+cd Recordings
+adb pull -a /sdcard/Android/data/com.chiller3.bcr/files
 pause
 echo All folders pulled successfully!
 cls
@@ -73,14 +78,14 @@ if /i "%choice%"=="Y" (
 :resdffd
 echo This part of the script will push every folder from the current directory to /sdcard/
 pause
-goto wpask
+cd ..
+goto ask_directory
 :wpask
 set /p cho1=Did You backup WhatsApp (y/n):
 if /i "%cho1%"=="n" (
 cd %local_directory%
 goto ask_directory
 ) else if /i "%cho1%"=="y" (
-cd ..
 cd ..
     goto ask_directory
 ) else (
@@ -113,7 +118,7 @@ echo Press Y to accept, and any other key to exit the script
 set /p cho2=Enter your choice: 
 
 if /i "%cho2%"=="Y" (
-    adb push . /sdcard/
+    adb push . /sdcard/ && adb install "DataBackup\DataBackup.apk" && echo "All Done" && pause
 ) else (
     goto exit
 )
