@@ -1,7 +1,20 @@
 @echo off
 title ADB-CMD Backup Restore Script
 mkdir Pulled
+cls
+:verifydevice
+cls
 adb devices
+echo If you can see your device press Y
+echo Or If You can't, connect it using another terminal window and press enter
+set /p confirmadbconnection=Enter Your Choice: 
+if /i "%confirmadbconnection%"=="Y" (
+  goto verdevsucess
+)
+else (
+goto verifydevice
+)
+:verdevsucess
 cls
 set excluded_folder="Android"
 set local_directory="Pulled"
@@ -59,6 +72,7 @@ cd ..
 mkdir Recordings
 cd Recordings
 adb pull -a /sdcard/Android/data/com.chiller3.bcr/files
+cd ..
 pause
 echo All folders pulled successfully!
 cls
@@ -67,18 +81,10 @@ pause
 goto askbr
 
 :res
-echo Do You want to restore files? Y/N
-set /p choice=Enter your choice: 
-
-if /i "%choice%"=="Y" (
-    goto resdffd
-) else (
-    goto exit
-)
+goto resdffd
 :resdffd
 echo This part of the script will push every folder from the current directory to /sdcard/
 pause
-cd ..
 goto ask_directory
 :wpask
 set /p cho1=Did You backup WhatsApp (y/n):
@@ -86,6 +92,7 @@ if /i "%cho1%"=="n" (
 cd %local_directory%
 goto ask_directory
 ) else if /i "%cho1%"=="y" (
+cd ..
 cd ..
     goto ask_directory
 ) else (
@@ -118,7 +125,7 @@ echo Press Y to accept, and any other key to exit the script
 set /p cho2=Enter your choice: 
 
 if /i "%cho2%"=="Y" (
-    adb push . /sdcard/ && adb install "DataBackup\DataBackup.apk" && echo "All Done" && pause
+    adb push . /sdcard/ && adb install "%local_directory%\DataBackup\DataBackup.apk" && echo "All Done" && pause
 ) else (
     goto exit
 )
