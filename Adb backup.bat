@@ -125,7 +125,7 @@ echo Press Y to accept, and any other key to exit the script
 set /p cho2=Enter your choice: 
 
 if /i "%cho2%"=="Y" (
-    adb push . /sdcard/ && adb install "%local_directory%\DataBackup\DataBackup.apk" && echo "All Done" && pause
+    adb push . /sdcard/ && cd .. && adb install "%local_directory%\DataBackup\DataBackup.apk" && echo "All Done" && pause
 ) else (
     goto exit
 )
