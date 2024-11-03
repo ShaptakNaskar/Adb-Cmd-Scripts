@@ -66,7 +66,7 @@ for /f "tokens=* delims= " %%a in ('adb shell ls /sdcard/ ^| findstr /V %exclude
     pause
   )
 )
-mkdir "%local_directory%\Android\media\" && cd "%local_directory%\Android\media\" &&  adb pull -a /sdcard/Android/media/com.whatsapp/
+mkdir "%local_directory%\Android\media\" && cd "%local_directory%\Android\media\" &&  adb pull -a /sdcard/Android/media/com.whatsapp/ &&  adb pull -a /sdcard/Android/media/com.whatsapp.w4b/
 cd ..
 cd ..
 mkdir Recordings
@@ -87,7 +87,7 @@ echo This part of the script will push every folder from the current directory t
 pause
 goto ask_directory
 :wpask
-set /p cho1=Did You backup WhatsApp (y/n):
+set /p cho1=Did You backup WhatsApp (Press Y if unsure):
 if /i "%cho1%"=="n" (
 cd %local_directory%
 goto ask_directory
