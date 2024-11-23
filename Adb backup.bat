@@ -66,7 +66,10 @@ for /f "tokens=* delims= " %%a in ('adb shell ls /sdcard/ ^| findstr /V %exclude
     pause
   )
 )
-mkdir "%local_directory%\Android\media\" && cd "%local_directory%\Android\media\" &&  adb pull -a /sdcard/Android/media/com.whatsapp/ &&  adb pull -a /sdcard/Android/media/com.whatsapp.w4b/
+mkdir "%local_directory%\Android\media\"
+cd "%local_directory%\Android\media\"
+adb pull -a /sdcard/Android/media/com.whatsapp/
+adb pull -a /sdcard/Android/media/com.whatsapp.w4b/
 cd ..
 cd ..
 mkdir Recordings
