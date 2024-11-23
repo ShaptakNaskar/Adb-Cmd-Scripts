@@ -12,7 +12,7 @@ These scripts heavily relies on Wireless Debugging.
 
 >Requires ADB in Path, Use [Adb and Fastboot ++](https://github.com/K3V1991/ADB-and-FastbootPlusPlus/releases/latest)
 
-## Android Pull WSL Push
+## Android Pull WSA Push
 > Gives User Choice between USB Debugging or Wireless Debugging
 > Connects to the provided IP:PORT(only Wireless Debugging)  
 > Pulls /sdcard/DCIM , /sdcard/Pictures/ , and /sdcard/Movies/ to the current directory  
