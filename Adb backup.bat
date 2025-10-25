@@ -1,238 +1,155 @@
 @echo off
-setlocal EnableDelayedExpansion
-title ADB-CMD Backup & Restore - Optimized Connection
+setlocal enabledelayedexpansion
 
-:: ==============================================
-:: ADB-CMD Scripts - Optimized Connection Flow
-:: - Unified USB/Wireless connection menu
-:: - Automatic device detection and guidance
-:: - Step-by-step wireless pairing and connect
-:: - Improved error handling and validation
-:: - pushd/popd for directory management
-:: ==============================================
-
-:: Ensure output directory exists
-if not exist "Pulled" mkdir "Pulled"
+rem ===================================================
+rem         ADB Device Backup & Restore Tool
+rem ===================================================
 
 :main_menu
 cls
-echo ==============================================
-echo        ADB-CMD Backup & Restore Tool
-echo ==============================================
+echo ===============================================
+echo         ADB Backup and Restore Tool
+echo ===============================================
 echo.
-echo 1) Connect device (USB or Wireless)
-echo 2) Backup from device to PC
-echo 3) Restore from PC to device
-echo 4) Exit
+echo 1. Backup /sdcard/ to PC
+echo 2. Restore /sdcard/ from PC
+echo 3. Exit
 echo.
-set /p menu_choice=Select an option [1-4]: 
-if "%menu_choice%"=="1" goto connect_menu
-if "%menu_choice%"=="2" goto verify_connected_for_backup
-if "%menu_choice%"=="3" goto verify_connected_for_restore
-if "%menu_choice%"=="4" goto end
-echo Invalid choice. Please select 1-4.
+set /p choice=Select an option (1-3): 
+
+if "%choice%"=="1" goto backup
+if "%choice%"=="2" goto res
+if "%choice%"=="3" goto end
+echo Invalid choice. Please try again.
 pause
 goto main_menu
 
-:: ==============================================
-:: Connection Menu
-:: ==============================================
-:connect_menu
-cls
-echo ==============================================
-echo           Device Connection Menu
-echo ==============================================
-echo.
-echo Checking for already connected devices...
-for /f "skip=1 tokens=1,2" %%A in ('adb devices') do (
-  if /i NOT "%%B"=="device" (
-    rem skip lines that are not actual devices
-  ) else (
-    set FOUND_DEVICE=1
-  )
-)
-if defined FOUND_DEVICE (
-  echo Device already connected.
-  timeout /t 1 >nul
-  goto main_menu
-)
-set FOUND_DEVICE=
-
-echo.
-echo Choose connection type:
-echo   U) USB cable
-echo   W) Wireless debugging (pair + connect)
-echo   B) Back
-set /p conn_choice=Enter choice [U/W/B]: 
-if /i "%conn_choice%"=="B" goto main_menu
-if /i "%conn_choice%"=="U" goto connect_usb
-if /i "%conn_choice%"=="W" goto connect_wireless
-echo Invalid choice.
-pause
-goto connect_menu
-
-:connect_usb
-cls
-echo ==============================================
-echo                USB Connection
-echo ==============================================
-echo.
-echo 1) Connect your Android device via USB cable
-echo 2) Ensure USB debugging is enabled (Developer options)
-echo 3) Authorize the PC on your device when prompted
-echo.
-pause
-adb kill-server >nul 2>&1
-adb start-server >nul 2>&1
-adb devices
-echo.
-set /p usb_seen=If you can see your device as "device", press Y to continue: 
-if /i "%usb_seen%"=="Y" goto verdevsuccess
-echo Device not detected. Try another cable/port and ensure authorization.
-pause
-goto connect_usb
-
-:connect_wireless
-cls
-echo ==============================================
-echo            Wireless Debugging Setup
-echo ==============================================
-echo.
-echo On your ANDROID device:
-echo 1) Open Developer options > Wireless debugging
-echo 2) Tap "Pair device with pairing code"
-echo 3) Note the IP:PAIR_PORT and the 6-digit Pairing Code
-echo.
-set /p pair_ip_port=Enter pairing IP:port (e.g., 192.168.1.50:37119): 
-set /p pair_code=Enter the 6-digit pairing code: 
-if "%pair_ip_port%"=="" (echo Invalid IP:port.& pause& goto connect_wireless)
-if "%pair_code%"=="" (echo Invalid pairing code.& pause& goto connect_wireless)
-
-echo Pairing...
-adb pair "%pair_ip_port%" "%pair_code%"
-if errorlevel 1 (
-  echo Pairing failed. Please verify IP/port and code, then try again.
-  pause
-  goto connect_wireless
-)
-echo.
-echo Now, still under Wireless debugging, note the Connect IP:PORT (different port).
-set /p connect_ip_port=Enter connect IP:port (e.g., 192.168.1.50:49152): 
-if "%connect_ip_port%"=="" (echo Invalid IP:port.& pause& goto connect_wireless)
-
-echo Connecting...
-adb connect "%connect_ip_port%"
-if errorlevel 1 (
-  echo Connect failed. Ensure device is on same network and Wireless debugging is active.
-  pause
-  goto connect_wireless
-)
-echo Connected over wireless.
-timeout /t 1 >nul
-goto verdevsuccess
-
-:verdevsuccess
-cls
-echo ==============================================
-echo           Device Connected Successfully
-echo ==============================================
-echo.
-adb devices
-echo.
-pause
-goto main_menu
-
-:: ==============================================
-:: Backup Section
-:: ==============================================
-:verify_connected_for_backup
-for /f "skip=1 tokens=1,2" %%A in ('adb devices') do (
-  if /i "%%B"=="device" set FOUND_DEVICE=1
-)
-if not defined FOUND_DEVICE (
-  set FOUND_DEVICE=
-  echo No device detected. Please connect first.
-  pause
-  goto connect_menu
-)
-set FOUND_DEVICE=
-goto bcup
-
-:bcup
+:backup
 cls
 echo ==============================================
 echo                Backup Mode
 echo ==============================================
 echo.
-set "excluded_folder=Android"
-set "local_directory=Pulled"
-echo This will pull all folders from /sdcard/ except: !excluded_folder!
-echo Destination: !local_directory!
-pause
-
-echo Listing folders on device (excluding !excluded_folder!)...
-for /f "usebackq delims=" %%F in (`adb shell ls /sdcard/ 2^>nul`) do (
-  echo %%F| findstr /i /v "^!excluded_folder!$" >nul && echo %%F>>"_folder_list.tmp"
-)
-if not exist "_folder_list.tmp" (
-  echo Could not enumerate folders or none found.
-  pause
-  del "_folder_list.tmp" 2>nul
-  goto main_menu
-)
-
+echo Checking device connection...
+adb devices -l
 echo.
-echo The following folders will be pulled:
-type "_folder_list.tmp"
-echo.
-set /p confirm_pull=Press Y to confirm, any other key to cancel: 
-if /i not "%confirm_pull%"=="Y" (
-  echo Cancelled.
-  del "_folder_list.tmp" 2>nul
+set /p proceed=Does your device show above? (Y/N): 
+if /i not "%proceed%"=="Y" (
+  echo Please connect device and enable USB debugging.
   pause
   goto main_menu
 )
 
-echo Pulling folders...
-for /f "usebackq delims=" %%F in ("_folder_list.tmp") do (
-  echo Pulling: %%F
-  adb pull -a "/sdcard/%%F" "!local_directory!" 2>nul 1>nul
+rem Check if enabledelayedexpansion is active
+if not defined CMDCMDLINE (
+    echo Error: Delayed expansion not enabled.
+    pause
+    goto main_menu
 )
-del "_folder_list.tmp" 2>nul
+
+rem Set default backup directory
+set "default_directory=%USERPROFILE%\Desktop\sdcard_backup_%date:~-4,4%%date:~-10,2%%date:~-7,2%"
+
+echo.
+echo Default backup directory:
+echo !default_directory!
+echo.
+set /p use_default=Use this directory? (Y/N): 
+
+if /i "%use_default%"=="Y" (
+    set "local_directory=!default_directory!"
+) else (
+    set /p local_directory=Enter full path for backup (with quotes if spaces): 
+    if not defined local_directory (
+        echo No directory specified. Using default.
+        set "local_directory=!default_directory!"
+    )
+)
+
+rem Remove quotes if present
+set local_directory=!local_directory:"=!
+
+echo.
+echo Creating backup directory...
+mkdir "!local_directory!" 2>nul
+
+if not exist "!local_directory!" (
+    echo Error: Could not create directory.
+    pause
+    goto main_menu
+)
+
+echo Directory ready: !local_directory!
+echo.
+echo Starting backup...
+echo This may take several minutes depending on data size.
+echo.
+
+rem Pull main folders
+echo Pulling main folders from /sdcard/...
+pushd "!local_directory!"
+
+adb pull -a /sdcard/DCIM DCIM\ 2>nul
+adb pull -a /sdcard/Pictures Pictures\ 2>nul
+adb pull -a /sdcard/Download Download\ 2>nul
+adb pull -a /sdcard/Documents Documents\ 2>nul
+adb pull -a /sdcard/Music Music\ 2>nul
+adb pull -a /sdcard/Movies Movies\ 2>nul
+adb pull -a /sdcard/Audiobooks Audiobooks\ 2>nul
+adb pull -a /sdcard/Podcasts Podcasts\ 2>nul
+adb pull -a /sdcard/Ringtones Ringtones\ 2>nul
+adb pull -a /sdcard/Alarms Alarms\ 2>nul
+adb pull -a /sdcard/Notifications Notifications\ 2>nul
+adb pull -a /sdcard/Screenshots Screenshots\ 2>nul
+adb pull -a /sdcard/Recordings Recordings\ 2>nul
+
+rem Initialize failure tracking
+set WHATSAPP_FAILED=0
+set WHATSAPP_BUSINESS_FAILED=0
+set BCR_FAILED=0
 
 echo Pulling WhatsApp media (if present)...
 pushd "!local_directory!"
 mkdir "Android\media" 2>nul
 pushd "Android\media"
 adb pull -a /sdcard/Android/media/com.whatsapp/ 2>nul 1>nul
+if errorlevel 1 set WHATSAPP_FAILED=1
 adb pull -a /sdcard/Android/media/com.whatsapp.w4b/ 2>nul 1>nul
+if errorlevel 1 set WHATSAPP_BUSINESS_FAILED=1
 popd
 mkdir "Recordings" 2>nul
 pushd "Recordings"
 adb pull -a /sdcard/Android/data/com.chiller3.bcr/files 2>nul 1>nul
+if errorlevel 1 set BCR_FAILED=1
 popd
 popd
 
 echo.
-echo Backup completed.
+echo ============================================
+echo          Backup Summary
+echo ============================================
+echo.
+echo Main folders: Completed
+if !WHATSAPP_FAILED!==1 (
+    echo WhatsApp: FAILED (not found or access denied)
+) else (
+    echo WhatsApp: Completed
+)
+if !WHATSAPP_BUSINESS_FAILED!==1 (
+    echo WhatsApp Business: FAILED (not found or access denied)
+) else (
+    echo WhatsApp Business: Completed
+)
+if !BCR_FAILED!==1 (
+    echo BCR Call Recordings: FAILED (not found or access denied)
+) else (
+    echo BCR Call Recordings: Completed
+)
+echo.
+echo ============================================
+echo.
 pause
 goto main_menu
-
-:: ==============================================
-:: Restore Section
-:: ==============================================
-:verify_connected_for_restore
-for /f "skip=1 tokens=1,2" %%A in ('adb devices') do (
-  if /i "%%B"=="device" set FOUND_DEVICE=1
-)
-if not defined FOUND_DEVICE (
-  set FOUND_DEVICE=
-  echo No device detected. Please connect first.
-  pause
-  goto connect_menu
-)
-set FOUND_DEVICE=
-goto res
 
 :res
 cls
@@ -243,7 +160,6 @@ echo.
 echo Current directory: %CD%
 set /p is_correct_dir=Is this the directory containing your /sdcard/ backup? (Y/N): 
 if /i "%is_correct_dir%"=="Y" goto restore
-
 set /p restoredir=Enter full path to your backup of /sdcard/ (with quotes if spaces): 
 if not exist %restoredir% (
   echo Path not found. Please check and try again.
@@ -271,7 +187,6 @@ if /i not "%confirm_restore%"=="Y" (
   pause
   goto main_menu
 )
-
 echo Restoring...
 adb push . /sdcard/ 2>nul
 if defined restoredir popd
