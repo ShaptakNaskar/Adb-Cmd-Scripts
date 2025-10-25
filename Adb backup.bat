@@ -1,138 +1,200 @@
 @echo off
-title ADB-CMD Backup Restore Script
-mkdir Pulled
-cls
-:verifydevice
-cls
-adb devices
-echo If you can see your device press Y
-echo Or If You can't, connect it using another terminal window and press enter
-set /p confirmadbconnection=Enter Your Choice: 
-if /i "%confirmadbconnection%"=="Y" (
-  goto verdevsucess
-)
-else (
-goto verifydevice
-)
-:verdevsucess
-cls
-set excluded_folder="Android"
-set local_directory="Pulled"
-echo Welcome to ADB-CMD Backup Restore Script
-:askbr
-set /p cho8=Enter B for Backup, R for Restore:
-if /i "%cho8%"=="B" (
-goto bcup
-) else if /i "%cho8%"=="R" (
-    goto res
-) else (
-    echo Invalid choice. Please B for Backup, R for Restore.
-    goto askbr
-)
-:bcup
+setlocal enabledelayedexpansion
 
-echo This part of the script will pull every folder from your Internal Storage
-echo (except the %excluded_folder% folder) and put it in %local_directory% folder
+rem ===================================================
+rem         ADB Device Backup & Restore Tool
+rem ===================================================
+
+:main_menu
+cls
+echo ===============================================
+echo         ADB Backup and Restore Tool
+echo ===============================================
+echo.
+echo 1. Backup /sdcard/ to PC
+echo 2. Restore /sdcard/ from PC
+echo 3. Exit
+echo.
+set /p choice=Select an option (1-3): 
+
+if "%choice%"=="1" goto backup
+if "%choice%"=="2" goto res
+if "%choice%"=="3" goto end
+echo Invalid choice. Please try again.
 pause
+goto main_menu
+
+:backup
 cls
-echo Want to make changes? Open this file in a text editor, and change
-echo "set excluded_folder=" and "set local_directory=" values 
-pause
-cls
-
-echo Listing all folders on the Android device...
-adb shell ls /sdcard/
-pause
-cls
-
-echo Filtering out the excluded folder...
-adb shell ls /sdcard/ | findstr /V %excluded_folder%
-pause
-
-echo The above folders will be pulled to %local_directory%.
-set /p confirm=Press Y to confirm, or any other key to cancel: 
-
-if /i not "%confirm%"=="Y" (
-  echo Pull cancelled.
+echo ==============================================
+echo                Backup Mode
+echo ==============================================
+echo.
+echo Checking device connection...
+adb devices -l
+echo.
+set /p proceed=Does your device show above? (Y/N): 
+if /i not "%proceed%"=="Y" (
+  echo Please connect device and enable USB debugging.
   pause
-  exit /b 1
+  goto main_menu
 )
 
-echo Pulling all folders except the excluded folder to %local_directory%...
-for /f "tokens=* delims= " %%a in ('adb shell ls /sdcard/ ^| findstr /V %excluded_folder%') do (
-  echo Pulling folder: %%a
-  adb pull -a "/sdcard/%%a" "%local_directory%" || (
-    echo Error pulling folder: %%a
+rem Check if enabledelayedexpansion is active
+if not defined CMDCMDLINE (
+    echo Error: Delayed expansion not enabled.
     pause
-  )
+    goto main_menu
 )
-mkdir "%local_directory%\Android\media\"
-cd "%local_directory%\Android\media\"
-adb pull -a /sdcard/Android/media/com.whatsapp/
-adb pull -a /sdcard/Android/media/com.whatsapp.w4b/
-cd ..
-cd ..
-mkdir Recordings
-cd Recordings
-adb pull -a /sdcard/Android/data/com.chiller3.bcr/files
-cd ..
+
+rem Set default backup directory
+set "default_directory=%USERPROFILE%\Desktop\sdcard_backup_%date:~-4,4%%date:~-10,2%%date:~-7,2%"
+
+echo.
+echo Default backup directory:
+echo !default_directory!
+echo.
+set /p use_default=Use this directory? (Y/N): 
+
+if /i "%use_default%"=="Y" (
+    set "local_directory=!default_directory!"
+) else (
+    set /p local_directory=Enter full path for backup (with quotes if spaces): 
+    if not defined local_directory (
+        echo No directory specified. Using default.
+        set "local_directory=!default_directory!"
+    )
+)
+
+rem Remove quotes if present
+set local_directory=!local_directory:"=!
+
+echo.
+echo Creating backup directory...
+mkdir "!local_directory!" 2>nul
+
+if not exist "!local_directory!" (
+    echo Error: Could not create directory.
+    pause
+    goto main_menu
+)
+
+echo Directory ready: !local_directory!
+echo.
+echo Starting backup...
+echo This may take several minutes depending on data size.
+echo.
+
+rem Pull main folders
+echo Pulling main folders from /sdcard/...
+pushd "!local_directory!"
+
+adb pull -a /sdcard/DCIM DCIM\ 2>nul
+adb pull -a /sdcard/Pictures Pictures\ 2>nul
+adb pull -a /sdcard/Download Download\ 2>nul
+adb pull -a /sdcard/Documents Documents\ 2>nul
+adb pull -a /sdcard/Music Music\ 2>nul
+adb pull -a /sdcard/Movies Movies\ 2>nul
+adb pull -a /sdcard/Audiobooks Audiobooks\ 2>nul
+adb pull -a /sdcard/Podcasts Podcasts\ 2>nul
+adb pull -a /sdcard/Ringtones Ringtones\ 2>nul
+adb pull -a /sdcard/Alarms Alarms\ 2>nul
+adb pull -a /sdcard/Notifications Notifications\ 2>nul
+adb pull -a /sdcard/Screenshots Screenshots\ 2>nul
+adb pull -a /sdcard/Recordings Recordings\ 2>nul
+
+rem Initialize failure tracking
+set WHATSAPP_FAILED=0
+set WHATSAPP_BUSINESS_FAILED=0
+set BCR_FAILED=0
+
+echo Pulling WhatsApp media (if present)...
+pushd "!local_directory!"
+mkdir "Android\media" 2>nul
+pushd "Android\media"
+adb pull -a /sdcard/Android/media/com.whatsapp/ 2>nul 1>nul
+if errorlevel 1 set WHATSAPP_FAILED=1
+adb pull -a /sdcard/Android/media/com.whatsapp.w4b/ 2>nul 1>nul
+if errorlevel 1 set WHATSAPP_BUSINESS_FAILED=1
+popd
+mkdir "Recordings" 2>nul
+pushd "Recordings"
+adb pull -a /sdcard/Android/data/com.chiller3.bcr/files 2>nul 1>nul
+if errorlevel 1 set BCR_FAILED=1
+popd
+popd
+
+echo.
+echo ============================================
+echo          Backup Summary
+echo ============================================
+echo.
+echo Main folders: Completed
+if !WHATSAPP_FAILED!==1 (
+    echo WhatsApp: FAILED (not found or access denied)
+) else (
+    echo WhatsApp: Completed
+)
+if !WHATSAPP_BUSINESS_FAILED!==1 (
+    echo WhatsApp Business: FAILED (not found or access denied)
+) else (
+    echo WhatsApp Business: Completed
+)
+if !BCR_FAILED!==1 (
+    echo BCR Call Recordings: FAILED (not found or access denied)
+) else (
+    echo BCR Call Recordings: Completed
+)
+echo.
+echo ============================================
+echo.
 pause
-echo All folders pulled successfully!
-cls
-echo Press any key to go back to main menu
-pause
-goto askbr
+goto main_menu
 
 :res
-goto resdffd
-:resdffd
-echo This part of the script will push every folder from the current directory to /sdcard/
-pause
-goto ask_directory
-:wpask
-set /p cho1=Did You backup WhatsApp (Press Y if unsure):
-if /i "%cho1%"=="n" (
-cd %local_directory%
-goto ask_directory
-) else if /i "%cho1%"=="y" (
-cd ..
-cd ..
-    goto ask_directory
-) else (
-    echo Invalid choice. Please enter 'y' for yes or 'n' for no.
-    goto ask_directory
-)
-
-:ask_directory
+cls
+echo ==============================================
+echo                Restore Mode
+echo ==============================================
+echo.
 echo Current directory: %CD%
-set /p choice1=Is this the correct directory (y/n): 
-if /i "%choice1%"=="n" (
-   goto ask_restoredir
-) else if /i "%choice1%"=="y" (
-    cls && echo Directory selected: %CD% && goto restore
-) else (
-    echo Invalid choice. Please enter 'y' for yes or 'n' for no.
-    goto ask_directory
+set /p is_correct_dir=Is this the directory containing your /sdcard/ backup? (Y/N): 
+if /i "%is_correct_dir%"=="Y" goto restore
+set /p restoredir=Enter full path to your backup of /sdcard/ (with quotes if spaces): 
+if not exist %restoredir% (
+  echo Path not found. Please check and try again.
+  pause
+  goto res
 )
-
-:ask_restoredir
-set /p restoredir=Enter the directory where you backed up /sdcard/ (in double quotations)- 
-echo You entered- %restoredir%
-cd /d %restoredir%
-goto ask_directory
+pushd %restoredir%
+echo Now in: %CD%
+set /p proceed_dir=Use this directory for restore? (Y/N): 
+if /i not "%proceed_dir%"=="Y" (
+  popd
+  goto res
+)
+goto restore
 
 :restore
-echo "The Following Folders will be restored"
-dir
-echo Press Y to accept, and any other key to exit the script
-set /p cho2=Enter your choice: 
-
-if /i "%cho2%"=="Y" (
-    adb push . /sdcard/ && cd .. && adb install "%local_directory%\DataBackup\DataBackup.apk" && echo "All Done" && pause
-) else (
-    goto exit
+cls
+echo The following items will be pushed to /sdcard/ on device:
+dir /b
+echo.
+set /p confirm_restore=Press Y to restore, any other key to cancel: 
+if /i not "%confirm_restore%"=="Y" (
+  echo Restore cancelled.
+  if defined restoredir popd
+  pause
+  goto main_menu
 )
-
-:exit
-echo Exiting the script...
+echo Restoring...
+adb push . /sdcard/ 2>nul
+if defined restoredir popd
+echo Done.
 pause
+goto main_menu
+
+:end
+echo Exiting...
+endlocal
+exit /b 0
