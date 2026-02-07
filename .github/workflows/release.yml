@@ -24,6 +24,8 @@ jobs:
         run: npm run build
 
       - name: Build Linux packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --linux AppImage deb rpm
 
       - name: Upload Linux artifacts
@@ -50,6 +52,8 @@ jobs:
         run: npm run build
 
       - name: Build Windows packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win
 
       - name: Upload Windows artifacts
@@ -74,6 +78,8 @@ jobs:
         run: npm run build
 
       - name: Build macOS packages (Intel + Apple Silicon)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --mac
 
       - name: Upload macOS artifacts
