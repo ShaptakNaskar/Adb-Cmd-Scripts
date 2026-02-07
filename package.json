@@ -48,6 +48,7 @@
             "resources/**/*"
         ],
         "mac": {
+            "artifactName": "${productName}-${version}-macOS-${arch}.${ext}",
             "target": [
                 {
                     "target": "dmg",
@@ -67,7 +68,14 @@
             ],
             "icon": "resources/icon.ico"
         },
+        "nsis": {
+            "artifactName": "${productName}-${version}-Windows-${arch}-Setup.${ext}"
+        },
+        "portable": {
+            "artifactName": "${productName}-${version}-Windows-${arch}-Portable.${ext}"
+        },
         "linux": {
+            "artifactName": "${productName}-${version}-Linux-${arch}.${ext}",
             "target": [
                 "AppImage",
                 "deb",

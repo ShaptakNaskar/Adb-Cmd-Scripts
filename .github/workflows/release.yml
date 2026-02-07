@@ -114,13 +114,13 @@ jobs:
 
             | Platform | File | Notes |
             |---|---|---|
-            | **Windows** | `ADB-Commander-Setup-*.exe` | NSIS installer |
-            | **Windows** | `ADB-Commander-*-portable.exe` | No install needed |
-            | **macOS (Intel)** | `ADB-Commander-*-x64.dmg` | ⚠️ Untested |
-            | **macOS (Apple Silicon)** | `ADB-Commander-*-arm64.dmg` | ⚠️ Untested |
-            | **Ubuntu / Debian** | `adb-commander_*_amd64.deb` | `sudo dpkg -i` |
-            | **Fedora / RHEL** | `adb-commander-*.x86_64.rpm` | `sudo rpm -i` |
-            | **Linux (universal)** | `ADB-Commander-*.AppImage` | `chmod +x && ./` |
+            | **Windows (x64)** | `ADB-Commander-*-Windows-x64-Setup.exe` | NSIS installer |
+            | **Windows (x64)** | `ADB-Commander-*-Windows-x64-Portable.exe` | No install needed |
+            | **macOS (Intel)** | `ADB-Commander-*-macOS-x64.dmg` | ⚠️ Untested |
+            | **macOS (Apple Silicon)** | `ADB-Commander-*-macOS-arm64.dmg` | ⚠️ Untested |
+            | **Ubuntu / Debian** | `ADB-Commander-*-Linux-x64.deb` | `sudo dpkg -i` |
+            | **Fedora / RHEL** | `ADB-Commander-*-Linux-x64.rpm` | `sudo rpm -i` |
+            | **Linux (universal)** | `ADB-Commander-*-Linux-x64.AppImage` | `chmod +x && ./` |
 
             > **Note:** macOS builds are untested. Please report any issues.
 
