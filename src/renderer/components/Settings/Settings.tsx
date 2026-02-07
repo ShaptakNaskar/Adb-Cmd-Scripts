@@ -115,7 +115,7 @@ export function Settings() {
                 </div>
 
                 <footer className="about-footer">
-                    <p>Licensed under MIT • © 2024 Sappy</p>
+                    <p>Licensed under GPL-3.0 • © 2026 Sappy</p>
                 </footer>
             </div>
         </div>
