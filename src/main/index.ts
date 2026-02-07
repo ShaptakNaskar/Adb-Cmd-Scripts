@@ -37,6 +37,27 @@ async function createWindow(): Promise<void> {
         mainWindow.webContents.openDevTools()
     } else {
         mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+
+        // Disable DevTools in production builds
+        mainWindow.webContents.on('devtools-opened', () => {
+            mainWindow?.webContents.closeDevTools()
+        })
+
+        // Block DevTools keyboard shortcuts in production
+        mainWindow.webContents.on('before-input-event', (event, input) => {
+            // Block F12
+            if (input.key === 'F12') {
+                event.preventDefault()
+            }
+            // Block Ctrl+Shift+I / Cmd+Shift+I
+            if (input.key === 'I' && input.shift && (input.control || input.meta)) {
+                event.preventDefault()
+            }
+            // Block Ctrl+Shift+J / Cmd+Shift+J (Console)
+            if (input.key === 'J' && input.shift && (input.control || input.meta)) {
+                event.preventDefault()
+            }
+        })
     }
 
     mainWindow.on('closed', () => {
