@@ -1,0 +1,137 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Build Linux packages
+        run: npx electron-builder --linux AppImage deb rpm
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-builds
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Build Windows packages
+        run: npx electron-builder --win
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-builds
+          path: |
+            dist/*.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Build macOS packages (Intel + Apple Silicon)
+        run: npx electron-builder --mac
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-builds
+          path: |
+            dist/*.dmg
+
+  release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: find artifacts -type f | head -20
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ADB Commander v${{ github.ref_name }}
+          body: |
+            ## ADB Commander ${{ github.ref_name }} — Initial Release
+
+            A modern, cross-platform GUI for the Android Debug Bridge.
+
+            ### Downloads
+
+            | Platform | File | Notes |
+            |---|---|---|
+            | **Windows** | `ADB-Commander-Setup-*.exe` | NSIS installer |
+            | **Windows** | `ADB-Commander-*-portable.exe` | No install needed |
+            | **macOS (Intel)** | `ADB-Commander-*-x64.dmg` | ⚠️ Untested |
+            | **macOS (Apple Silicon)** | `ADB-Commander-*-arm64.dmg` | ⚠️ Untested |
+            | **Ubuntu / Debian** | `adb-commander_*_amd64.deb` | `sudo dpkg -i` |
+            | **Fedora / RHEL** | `adb-commander-*.x86_64.rpm` | `sudo rpm -i` |
+            | **Linux (universal)** | `ADB-Commander-*.AppImage` | `chmod +x && ./` |
+
+            > **Note:** macOS builds are untested. Please report any issues.
+
+            ### What's included
+            - Device auto-detection and live monitoring
+            - File browser with backup & restore
+            - APK installation (drag & drop)
+            - Screenshot and screen recording (manual + timed)
+            - Package manager (list, disable, enable, uninstall)
+            - Power tools (key events, reboot modes, logcat)
+            - Full command console log
+
+          files: |
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+          draft: false
+          prerelease: false

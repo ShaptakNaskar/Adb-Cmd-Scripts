@@ -1,0 +1,168 @@
+.dashboard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-elevated);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-alpha), var(--secondary-alpha));
+    border-radius: 12px;
+    color: var(--primary);
+}
+
+.header-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.header-text h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 4px 0;
+}
+
+.header-text p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.refresh-btn:hover {
+    background: var(--surface-elevated);
+    border-color: var(--primary);
+}
+
+.refresh-btn:active svg {
+    animation: spin 0.5s linear;
+}
+
+.dashboard-content {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+}
+
+.devices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 24px;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 48px;
+}
+
+.empty-icon {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border-radius: 50%;
+    margin-bottom: 24px;
+    color: var(--text-muted);
+}
+
+.empty-state h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 8px 0;
+}
+
+.empty-state>p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0 0 32px 0;
+    max-width: 400px;
+}
+
+.empty-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 360px;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border-radius: 12px;
+    text-align: left;
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.step-text {
+    font-size: 14px;
+    color: var(--text);
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,295 @@
+.quick-actions {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.no-device {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    text-align: center;
+    gap: 16px;
+}
+
+.no-device h2 {
+    margin: 0;
+    color: var(--text);
+}
+
+.no-device p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.actions-content {
+    flex: 1;
+    padding: 24px 32px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding-bottom: 48px;
+}
+
+.action-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 16px 0;
+}
+
+/* Drop Zone */
+.drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px;
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+}
+
+.drop-zone:hover,
+.drop-zone.dragging {
+    border-color: var(--primary);
+    background: var(--primary-alpha);
+    color: var(--primary);
+}
+
+.drop-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.drop-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Screen Capture Grid */
+.capture-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.capture-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.capture-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.capture-card svg {
+    color: var(--primary);
+}
+
+.capture-label {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.capture-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Record Card */
+.record-card {
+    cursor: default;
+    padding: 24px;
+    gap: 16px;
+}
+
+.record-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.record-header-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.record-mode-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-elevated);
+    border-radius: 8px;
+    padding: 3px;
+    width: 100%;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mode-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.mode-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.duration-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.duration-selector label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.duration-selector select {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.record-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--danger);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.record-btn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.record-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Recording controls */
+.recording-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.recording-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px;
+}
+
+.rec-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--danger);
+    border-radius: 50%;
+    animation: recPulse 1s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.rec-time {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--danger);
+}
+
+.stop-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--surface-elevated);
+    border: 2px solid var(--danger);
+    border-radius: 8px;
+    color: var(--danger);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.stop-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,45 @@
+.title-bar {
+    height: 32px;
+    background: var(--surface-elevated);
+    display: flex;
+    align-items: center;
+    -webkit-app-region: drag;
+    border-bottom: 1px solid var(--border);
+}
+
+.title-bar.mac-drag-region {
+    height: 28px;
+    background: transparent;
+}
+
+.title-bar-drag {
+    flex: 1;
+}
+
+.window-controls {
+    display: flex;
+    -webkit-app-region: no-drag;
+}
+
+.window-btn {
+    width: 46px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.window-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.window-btn.close:hover {
+    background: #e81123;
+    color: white;
+}
