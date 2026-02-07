@@ -104,7 +104,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ADB Commander v${{ github.ref_name }}
+          name: ADB Commander ${{ github.ref_name }}
           body: |
             ## ADB Commander ${{ github.ref_name }} — Initial Release
 
