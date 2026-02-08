@@ -59,7 +59,6 @@ Download the latest release for your platform from the [Releases](https://github
 | macOS (Apple Silicon) | `ADB-Commander-1.0.0-arm64.dmg` |
 | Ubuntu / Debian | `adb-commander_1.0.0_amd64.deb` |
 | Fedora / RHEL | `adb-commander-1.0.0.x86_64.rpm` |
-| Arch Linux | `adb-commander-1.0.0.pacman` |
 | Linux (universal) | `ADB-Commander-1.0.0.AppImage` |
 
 > **Note:** macOS builds are untested. If you encounter issues, please open an issue.
