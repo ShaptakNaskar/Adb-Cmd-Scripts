@@ -6,6 +6,12 @@ import { FileBrowser } from './adb/FileBrowser'
 import { BinaryManager } from './binaries/BinaryManager'
 import { logger } from './utils/LogService'
 
+// Disable Chromium sandbox on Linux to avoid SUID permission issues
+// This must be called before app.whenReady()
+if (process.platform === 'linux') {
+    app.commandLine.appendSwitch('no-sandbox')
+}
+
 let mainWindow: BrowserWindow | null = null
 let adbService: AdbService | null = null
 let deviceMonitor: DeviceMonitor | null = null

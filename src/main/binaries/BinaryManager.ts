@@ -17,7 +17,8 @@ export class BinaryManager {
 
     constructor() {
         this.platform = process.platform
-        this.binariesDir = join(app.getPath('userData'), 'platform-tools')
+        // Don't add 'platform-tools' here - the zip already extracts to a 'platform-tools' folder
+        this.binariesDir = app.getPath('userData')
     }
 
     get adbPath(): string {
@@ -120,8 +121,9 @@ export class BinaryManager {
     }
 
     async cleanup(): Promise<void> {
-        if (existsSync(this.binariesDir)) {
-            rmSync(this.binariesDir, { recursive: true, force: true })
+        const platformToolsDir = join(this.binariesDir, 'platform-tools')
+        if (existsSync(platformToolsDir)) {
+            rmSync(platformToolsDir, { recursive: true, force: true })
         }
     }
 }
