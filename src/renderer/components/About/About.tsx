@@ -29,7 +29,7 @@ export function About({ onOpenExternal }: AboutProps) {
                 <div className="about-card hero">
                     <div className="app-logo">⚡</div>
                     <h2>ADB Commander</h2>
-                    <p className="version">v1.0.0</p>
+                    <p className="version">v1.0.2</p>
                     <p className="tagline">Cross-platform GUI for Android Debug Bridge</p>
                 </div>
 

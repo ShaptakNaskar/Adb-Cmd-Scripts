@@ -26,7 +26,7 @@ jobs:
       - name: Build Linux packages
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx electron-builder --linux AppImage deb rpm --publish never
+        run: npx electron-builder --linux AppImage deb rpm pacman --publish never
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -36,6 +36,7 @@ jobs:
             dist/*.AppImage
             dist/*.deb
             dist/*.rpm
+            dist/*.pacman
 
   build-windows:
     runs-on: windows-latest
@@ -106,7 +107,7 @@ jobs:
         with:
           name: ADB Commander ${{ github.ref_name }}
           body: |
-            ## ADB Commander ${{ github.ref_name }} — Initial Release
+            ## ADB Commander ${{ github.ref_name }}
 
             A modern, cross-platform GUI for the Android Debug Bridge.
 
@@ -120,6 +121,7 @@ jobs:
             | **macOS (Apple Silicon)** | `ADB-Commander-*-macOS-arm64.dmg` | ⚠️ Untested |
             | **Ubuntu / Debian** | `ADB-Commander-*-Linux-x64.deb` | `sudo dpkg -i` |
             | **Fedora / RHEL** | `ADB-Commander-*-Linux-x64.rpm` | `sudo rpm -i` |
+            | **Arch / Manjaro** | `ADB-Commander-*-Linux-x64.pacman` | `sudo pacman -U` |
             | **Linux (universal)** | `ADB-Commander-*-Linux-x64.AppImage` | `chmod +x && ./` |
 
             > **Note:** macOS builds are untested. Please report any issues.
@@ -137,6 +139,7 @@ jobs:
             artifacts/**/*.AppImage
             artifacts/**/*.deb
             artifacts/**/*.rpm
+            artifacts/**/*.pacman
             artifacts/**/*.exe
             artifacts/**/*.dmg
           draft: false
