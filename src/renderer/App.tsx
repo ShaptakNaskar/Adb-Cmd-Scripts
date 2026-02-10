@@ -7,7 +7,7 @@ import { Welcome } from './components/Welcome/Welcome'
 import { About } from './components/About/About'
 import { PowerTools } from './components/PowerTools/PowerTools'
 import { Console, LogEntry } from './components/Console/Console'
-import { TitleBar } from './components/TitleBar/TitleBar'
+
 import { Toaster, Toast } from './components/Toast/Toast'
 import { BackupOverlay } from './components/BackupOverlay/BackupOverlay'
 import type { DeviceInfo, ProgressInfo } from './types'
@@ -198,7 +198,7 @@ export default function App() {
 
     return (
         <div className="app">
-            <TitleBar />
+
             <div className="app-container">
                 <Sidebar
                     currentView={currentView}

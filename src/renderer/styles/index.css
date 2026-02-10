@@ -61,6 +61,7 @@ body,
 
 body {
     font-family: var(--font-sans);
+    user-select: none;
     font-size: 14px;
     line-height: 1.5;
     color: var(--text);
@@ -251,6 +252,7 @@ button:focus:not(:focus-visible) {
         opacity: 0;
         transform: translateY(8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
