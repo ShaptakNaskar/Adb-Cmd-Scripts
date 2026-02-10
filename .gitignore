@@ -34,3 +34,4 @@ coverage/
 
 # Electron
 release/
+package-lock.json
