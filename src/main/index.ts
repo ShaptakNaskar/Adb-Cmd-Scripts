@@ -135,6 +135,12 @@ function setupIpcHandlers(): void {
         return result
     })
 
+    ipcMain.handle('cancel-backup', async () => {
+        logger.command('Cancelling backup...')
+        adbService?.cancelPull()
+        logger.output('Backup cancelled by user')
+    })
+
     ipcMain.handle('restore-files', async (_, serial: string, source: string, destination: string) => {
         return adbService?.pushFiles(serial, source, destination, (progress) => {
             mainWindow?.webContents.send('restore-progress', progress)
@@ -256,6 +262,7 @@ function setupIpcHandlers(): void {
             const flag = includeSystem ? '' : '-3'
             const output = await adbService.execDeviceShell(serial, `pm list packages ${flag}`)
             return output
+                .replace(/\r\n/g, '\n')
                 .split('\n')
                 .filter(l => l.startsWith('package:'))
                 .map(l => l.replace('package:', '').trim())

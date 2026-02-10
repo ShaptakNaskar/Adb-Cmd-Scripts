@@ -97,6 +97,19 @@ jobs:
     needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get tag commit message
+        id: tag_message
+        run: |
+          # Get the commit message of the tagged commit
+          MSG=$(git log -1 --format=%B ${{ github.ref_name }})
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MSG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -112,14 +125,14 @@ jobs:
           body: |
             ## ADB Commander ${{ github.ref_name }}
 
-            A modern, cross-platform GUI for the Android Debug Bridge.
+            ${{ steps.tag_message.outputs.message }}
 
             ### Downloads
 
             | Platform | File | Notes |
             |---|---|---|
-            | **Windows (x64)** | `ADB-Commander-*-Windows-x64-Setup.exe` | NSIS installer |
-            | **Windows (x64)** | `ADB-Commander-*-Windows-x64-Portable.exe` | No install needed |
+            | **Windows (x64)** | `ADB-Commander-*-Windows-x64-Setup.exe` | ⚠️ Untested |
+            | **Windows (x64)** | `ADB-Commander-*-Windows-x64-Portable.exe` | ⚠️ Untested |
             | **macOS (Intel)** | `ADB-Commander-*-macOS-x64.dmg` | ⚠️ Untested |
             | **macOS (Apple Silicon)** | `ADB-Commander-*-macOS-arm64.dmg` | ⚠️ Untested |
             | **Ubuntu / Debian** | `ADB-Commander-*-Linux-x64.deb` | `sudo dpkg -i` |
@@ -127,16 +140,7 @@ jobs:
             | **Arch / Manjaro** | `ADB-Commander-*-Linux-x64.pacman` | `sudo pacman -U` |
             | **Linux (universal)** | `ADB-Commander-*-Linux-x64.AppImage` | `chmod +x && ./` |
 
-            > **Note:** macOS builds are untested. Please report any issues.
-
-            ### What's included
-            - Device auto-detection and live monitoring
-            - File browser with backup & restore
-            - APK installation (drag & drop)
-            - Screenshot and screen recording (manual + timed)
-            - Package manager (list, disable, enable, uninstall)
-            - Power tools (key events, reboot modes, logcat)
-            - Full command console log
+            > **Note:** Windows and macOS builds are untested. Please report any issues.
 
           files: |
             artifacts/**/*.AppImage

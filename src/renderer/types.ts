@@ -25,6 +25,9 @@ export interface ProgressInfo {
     currentFile: string
     speed: string
     eta: string
+    overallPercent: number
+    filePercent: number
+    elapsed: number
 }
 
 export interface Toast {
@@ -49,6 +52,7 @@ declare global {
             selectBackupDestination: () => Promise<string | null>
             backupFiles: (serial: string, sources: string[], destination: string) => Promise<{ success: boolean; errors: string[] }>
             onBackupProgress: (callback: (progress: ProgressInfo) => void) => () => void
+            cancelBackup: () => Promise<void>
             selectRestoreSource: () => Promise<string | null>
             restoreFiles: (serial: string, source: string, destination: string) => Promise<{ success: boolean; errors: string[] }>
             onRestoreProgress: (callback: (progress: ProgressInfo) => void) => () => void

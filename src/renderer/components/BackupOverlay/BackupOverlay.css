@@ -1,0 +1,160 @@
+.backup-overlay {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 280px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+    animation: overlay-in 0.3s ease;
+}
+
+.backup-overlay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    border-color: var(--primary);
+}
+
+@keyframes overlay-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.backup-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.backup-overlay-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.backup-overlay-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+}
+
+.backup-overlay-close:hover {
+    background: var(--surface-elevated);
+    color: var(--text);
+}
+
+.backup-overlay-file {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 8px;
+}
+
+.backup-overlay-bar {
+    height: 4px;
+    background: var(--surface-elevated);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.backup-overlay-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.backup-overlay-stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.backup-overlay-stat {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.backup-overlay-stat.speed {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.backup-overlay-cancel {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    font-size: 9px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.15s ease;
+}
+
+.backup-overlay-cancel:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+
+.backup-overlay-pulse {
+    position: absolute;
+    top: 6px;
+    right: 30px;
+    width: 6px;
+    height: 6px;
+    background: var(--success, #22c55e);
+    border-radius: 50%;
+    animation: overlay-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes overlay-pulse {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}

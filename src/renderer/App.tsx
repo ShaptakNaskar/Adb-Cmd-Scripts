@@ -9,7 +9,8 @@ import { PowerTools } from './components/PowerTools/PowerTools'
 import { Console, LogEntry } from './components/Console/Console'
 import { TitleBar } from './components/TitleBar/TitleBar'
 import { Toaster, Toast } from './components/Toast/Toast'
-import type { DeviceInfo } from './types'
+import { BackupOverlay } from './components/BackupOverlay/BackupOverlay'
+import type { DeviceInfo, ProgressInfo } from './types'
 
 type View = 'welcome' | 'dashboard' | 'backup' | 'actions' | 'powertools' | 'console' | 'about'
 
@@ -23,6 +24,12 @@ export default function App() {
     const [adbReady, setAdbReady] = useState(false)
     const [toasts, setToasts] = useState<Toast[]>([])
     const [logs, setLogs] = useState<LogEntry[]>([])
+    const [backupActive, setBackupActive] = useState(false)
+    const [backupProgress, setBackupProgress] = useState<ProgressInfo>({
+        current: 0, total: 0, currentFile: '', speed: '', eta: '',
+        overallPercent: 0, filePercent: 0, elapsed: 0
+    })
+    const [overlayDismissed, setOverlayDismissed] = useState(false)
 
     const addLog = useCallback((type: LogEntry['type'], message: string) => {
         setLogs(prev => [...prev, {
@@ -113,9 +120,22 @@ export default function App() {
             addLog(logEntry.type, logEntry.message)
         })
 
+        // Subscribe to backup progress at app level for overlay
+        const unsubscribeBackup = window.adb.onBackupProgress((progress) => {
+            setBackupActive(true)
+            setBackupProgress(progress)
+            setOverlayDismissed(false)
+
+            // Auto-deactivate when backup completes
+            if (progress.current === progress.total && progress.overallPercent === 100) {
+                setTimeout(() => setBackupActive(false), 2000)
+            }
+        })
+
         return () => {
             unsubscribe()
             unsubscribeLogs?.()
+            unsubscribeBackup()
         }
     }, [selectedDevice, addToast, addLog])
 
@@ -194,6 +214,13 @@ export default function App() {
                 </main>
             </div>
             <Toaster toasts={toasts} onRemove={removeToast} />
+            {backupActive && currentView !== 'backup' && !overlayDismissed && (
+                <BackupOverlay
+                    progress={backupProgress}
+                    onNavigate={() => setCurrentView('backup')}
+                    onDismiss={() => setOverlayDismissed(true)}
+                />
+            )}
         </div>
     )
 }

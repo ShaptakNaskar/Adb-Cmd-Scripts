@@ -10,7 +10,10 @@ import {
     ChevronRight,
     ChevronDown,
     RefreshCw,
-    Loader2
+    Loader2,
+    Clock,
+    Zap,
+    XCircle
 } from 'lucide-react'
 import type { DeviceInfo, FileEntry, Toast } from '../../types'
 import './BackupRestore.css'
@@ -67,7 +70,7 @@ export function BackupRestore({ device, onToast }: BackupRestoreProps) {
     const [fileTree, setFileTree] = useState<TreeNode[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [progress, setProgress] = useState({ current: 0, total: 0, currentFile: '' })
+    const [progress, setProgress] = useState({ current: 0, total: 0, currentFile: '', speed: '', eta: '', overallPercent: 0, filePercent: 0, elapsed: 0 })
     const [viewMode, setViewMode] = useState<'presets' | 'tree'>('presets')
 
     const loadRootDirectory = useCallback(async () => {
@@ -223,7 +226,7 @@ export function BackupRestore({ device, onToast }: BackupRestoreProps) {
             onToast({ type: 'error', message: 'Backup failed' })
         } finally {
             setIsProcessing(false)
-            setProgress({ current: 0, total: 0, currentFile: '' })
+            setProgress({ current: 0, total: 0, currentFile: '', speed: '', eta: '', overallPercent: 0, filePercent: 0, elapsed: 0 })
         }
     }
 
@@ -249,7 +252,7 @@ export function BackupRestore({ device, onToast }: BackupRestoreProps) {
             onToast({ type: 'error', message: 'Restore failed' })
         } finally {
             setIsProcessing(false)
-            setProgress({ current: 0, total: 0, currentFile: '' })
+            setProgress({ current: 0, total: 0, currentFile: '', speed: '', eta: '', overallPercent: 0, filePercent: 0, elapsed: 0 })
         }
     }
 
@@ -259,6 +262,13 @@ export function BackupRestore({ device, onToast }: BackupRestoreProps) {
         const sizes = ['B', 'KB', 'MB', 'GB']
         const i = Math.floor(Math.log(bytes) / Math.log(k))
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+    }
+
+    const formatElapsed = (seconds: number): string => {
+        const m = Math.floor(seconds / 60)
+        const s = seconds % 60
+        if (m > 0) return `${m}m ${s}s`
+        return `${s}s`
     }
 
     const renderTreeNode = (node: TreeNode, path: string[] = [], depth: number = 0): JSX.Element => {
@@ -448,23 +458,80 @@ export function BackupRestore({ device, onToast }: BackupRestoreProps) {
 
                         {isProcessing && (
                             <div className="progress-panel">
-                                <div className="progress-info">
-                                    <span>{progress.currentFile || 'Preparing...'}</span>
-                                    {progress.total > 0 && (
-                                        <span>{progress.current} / {progress.total}</span>
+                                <div className="progress-header">
+                                    <div className="progress-stats">
+                                        <span className="progress-stat">
+                                            <Clock size={14} />
+                                            {formatElapsed(progress.elapsed)}
+                                        </span>
+                                        {progress.speed && progress.speed !== 'Starting...' && progress.speed !== 'Transferring...' && (
+                                            <span className="progress-stat speed">
+                                                <Zap size={14} />
+                                                {progress.speed}
+                                            </span>
+                                        )}
+                                        <span className="progress-stat">
+                                            Folder {progress.current} / {progress.total}
+                                        </span>
+                                        <div className="progress-actions">
+                                            {progress.eta && (
+                                                <span className="progress-eta">{progress.eta}</span>
+                                            )}
+                                            <button
+                                                className="cancel-backup-btn"
+                                                onClick={async () => {
+                                                    await window.adb.cancelBackup()
+                                                    setIsProcessing(false)
+                                                }}
+                                                title="Cancel backup"
+                                            >
+                                                <XCircle size={16} />
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="progress-file">
+                                    <span className="progress-file-name" title={progress.currentFile}>
+                                        {progress.currentFile || 'Preparing...'}
+                                    </span>
+                                    {progress.filePercent > 0 && progress.filePercent < 100 && (
+                                        <span className="progress-file-pct">{progress.filePercent}%</span>
                                     )}
                                 </div>
-                                <div className="progress-bar">
-                                    <div
-                                        className="progress-fill"
-                                        style={{
-                                            width: progress.total > 0
-                                                ? `${(progress.current / progress.total) * 100}%`
-                                                : '100%',
-                                            animation: progress.total === 0 ? 'pulse 1.5s ease-in-out infinite' : 'none'
-                                        }}
-                                    />
+
+                                <div className="progress-bars">
+                                    <div className="progress-bar-row">
+                                        <span className="progress-bar-label">Overall</span>
+                                        <div className="progress-bar">
+                                            <div
+                                                className="progress-fill"
+                                                style={{
+                                                    width: progress.overallPercent > 0
+                                                        ? `${progress.overallPercent}%`
+                                                        : '100%',
+                                                    animation: progress.overallPercent === 0 ? 'pulse 1.5s ease-in-out infinite' : 'none'
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="progress-bar-pct">{progress.overallPercent}%</span>
+                                    </div>
+                                    {progress.filePercent > 0 && progress.filePercent < 100 && (
+                                        <div className="progress-bar-row">
+                                            <span className="progress-bar-label">File</span>
+                                            <div className="progress-bar">
+                                                <div
+                                                    className="progress-fill file-fill"
+                                                    style={{ width: `${progress.filePercent}%` }}
+                                                />
+                                            </div>
+                                            <span className="progress-bar-pct">{progress.filePercent}%</span>
+                                        </div>
+                                    )}
                                 </div>
+
+                                <div className="progress-pulse-dot" />
                             </div>
                         )}
                     </>

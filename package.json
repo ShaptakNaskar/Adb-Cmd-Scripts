@@ -1,6 +1,6 @@
 {
     "name": "adb-commander",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Cross-platform ADB GUI for Android device management",
     "main": "./out/main/index.js",
     "author": {
@@ -10,6 +10,7 @@
     "license": "GPL-3.0",
     "scripts": {
         "dev": "ELECTRON_DISABLE_SANDBOX=1 electron-vite dev",
+        "dev:win": "electron-vite dev",
         "build": "electron-vite build",
         "preview": "electron-vite preview",
         "typecheck": "tsc --noEmit",

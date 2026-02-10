@@ -27,6 +27,9 @@ export interface ProgressInfo {
     currentFile: string
     speed: string
     eta: string
+    overallPercent: number
+    filePercent: number
+    elapsed: number
 }
 
 export interface LogEntry {
@@ -48,6 +51,7 @@ export interface AdbApi {
     selectBackupDestination: () => Promise<string | null>
     backupFiles: (serial: string, sources: string[], destination: string) => Promise<{ success: boolean; errors: string[] }>
     onBackupProgress: (callback: (progress: ProgressInfo) => void) => () => void
+    cancelBackup: () => Promise<void>
     selectRestoreSource: () => Promise<string | null>
     restoreFiles: (serial: string, source: string, destination: string) => Promise<{ success: boolean; errors: string[] }>
     onRestoreProgress: (callback: (progress: ProgressInfo) => void) => () => void
@@ -108,6 +112,7 @@ const api: AdbApi = {
         ipcRenderer.on('backup-progress', handler)
         return () => ipcRenderer.removeListener('backup-progress', handler)
     },
+    cancelBackup: () => ipcRenderer.invoke('cancel-backup'),
     selectRestoreSource: () => ipcRenderer.invoke('select-restore-source'),
     restoreFiles: (serial, source, destination) => ipcRenderer.invoke('restore-files', serial, source, destination),
     onRestoreProgress: (callback) => {

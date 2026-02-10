@@ -1,6 +1,6 @@
-import { execSync, execFile } from 'child_process'
+import { execSync, execFile, execFileSync, spawn } from 'child_process'
 import { join, basename, dirname } from 'path'
-import { existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, readdirSync, statSync, renameSync, rmSync } from 'fs'
 import { promisify } from 'util'
 import { FilenameSanitizer } from '../utils/FilenameSanitizer'
 
@@ -35,15 +35,28 @@ export interface ProgressInfo {
     currentFile: string
     speed: string
     eta: string
+    overallPercent: number
+    filePercent: number
+    elapsed: number
 }
 
 export class AdbService {
     public readonly adbPath: string
     private sanitizer: FilenameSanitizer
+    private activePullProc: ReturnType<typeof spawn> | null = null
+    private pullCancelled = false
 
     constructor(adbPath: string) {
         this.adbPath = adbPath
         this.sanitizer = new FilenameSanitizer()
+    }
+
+    cancelPull(): void {
+        this.pullCancelled = true
+        if (this.activePullProc) {
+            this.activePullProc.kill('SIGTERM')
+            this.activePullProc = null
+        }
     }
 
     private exec(args: string[]): string {
@@ -89,7 +102,7 @@ export class AdbService {
 
     async getDevices(): Promise<DeviceInfo[]> {
         const output = this.exec(['devices', '-l'])
-        const lines = output.split('\n').slice(1).filter(line => line.trim())
+        const lines = output.replace(/\r\n/g, '\n').split('\n').slice(1).filter(line => line.trim())
 
         const devices: DeviceInfo[] = []
 
@@ -209,6 +222,103 @@ export class AdbService {
         }
     }
 
+    /**
+     * Get remote directory size in bytes via `adb shell du -s`.
+     * Returns 0 if the command fails.
+     */
+    private getRemoteSize(serial: string, path: string): number {
+        try {
+            // Use -k to ensure 1K blocks, though -s usually implies it on Android mostly
+            // Avoid pipes to reduce shell dependency issues
+            const output = execFileSync(
+                this.adbPath,
+                ['-s', serial, 'shell', `du -s -k '${path}'`],
+                { encoding: 'utf-8', timeout: 60000 }
+            )
+            // Output format: "12345   /path/to/file"
+            const match = output.trim().match(/^(\d+)/)
+            if (match) {
+                const kb = parseInt(match[1])
+                return kb * 1024 // Convert to bytes
+            }
+            return 0
+        } catch (e) {
+            console.error('Failed to get remote size:', e)
+            return 0
+        }
+    }
+
+    /**
+     * Recursively get local directory size in bytes.
+     */
+    private getLocalDirSize(dirPath: string): number {
+        let size = 0
+        try {
+            const entries = readdirSync(dirPath, { withFileTypes: true })
+            for (const entry of entries) {
+                const fullPath = join(dirPath, entry.name)
+                try {
+                    if (entry.isDirectory()) {
+                        size += this.getLocalDirSize(fullPath)
+                    } else {
+                        size += statSync(fullPath).size
+                    }
+                } catch {
+                    // File might be actively written
+                }
+            }
+        } catch {
+            // Directory might not exist yet
+        }
+        return size
+    }
+
+    /**
+     * Find the most recently modified file in a directory (recursive).
+     * Returns the relative path of the file currently being written.
+     */
+    private findLatestFile(dirPath: string, basePath?: string): { name: string; mtime: number } | null {
+        const root = basePath || dirPath
+        let latest: { name: string; mtime: number } | null = null
+        try {
+            const entries = readdirSync(dirPath, { withFileTypes: true })
+            for (const entry of entries) {
+                const fullPath = join(dirPath, entry.name)
+                try {
+                    if (entry.isDirectory()) {
+                        const sub = this.findLatestFile(fullPath, root)
+                        if (sub && (!latest || sub.mtime > latest.mtime)) {
+                            latest = sub
+                        }
+                    } else {
+                        const mtime = statSync(fullPath).mtimeMs
+                        if (!latest || mtime > latest.mtime) {
+                            latest = { name: fullPath.replace(root, '').replace(/^\/|^\\/, ''), mtime }
+                        }
+                    }
+                } catch {
+                    // skip
+                }
+            }
+        } catch {
+            // skip
+        }
+        return latest
+    }
+
+    /**
+     * Format bytes/sec into a human-readable speed string.
+     */
+    private formatSpeed(bytesPerSec: number): string {
+        if (bytesPerSec <= 0) return ''
+        if (bytesPerSec >= 1024 * 1024) {
+            return `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`
+        } else if (bytesPerSec >= 1024) {
+            return `${(bytesPerSec / 1024).toFixed(0)} KB/s`
+        }
+        return `${Math.round(bytesPerSec)} B/s`
+    }
+
     async pullFiles(
         serial: string,
         sources: string[],
@@ -218,8 +328,11 @@ export class AdbService {
         const errors: string[] = []
         const total = sources.length
         let current = 0
+        const startTime = Date.now()
+        this.pullCancelled = false
 
         for (const source of sources) {
+            if (this.pullCancelled) break
             current++
             const sanitizedName = this.sanitizer.sanitize(basename(source))
             const destPath = join(destination, sanitizedName)
@@ -228,8 +341,11 @@ export class AdbService {
                 current,
                 total,
                 currentFile: source,
-                speed: 'Calculating...',
-                eta: 'Calculating...'
+                speed: 'Calculating size...',
+                eta: `${total - current} folders remaining`,
+                overallPercent: 0,
+                filePercent: 0,
+                elapsed: Math.floor((Date.now() - startTime) / 1000)
             })
 
             try {
@@ -239,19 +355,165 @@ export class AdbService {
                     mkdirSync(destDir, { recursive: true })
                 }
 
-                // Use async exec so the main thread stays responsive
-                const output = await this.execDeviceAsync(serial, ['pull', '-a', source, destPath])
+                // Get remote size for progress calculation
+                const remoteSize = this.getRemoteSize(serial, source)
 
-                // Parse speed from adb output (e.g. "1 file pulled, 0 skipped. 25.3 MB/s")
+                // Rotation: Rename existing folder to .tmp_old to ensure fresh pull and accurate progress
+                const tempBackupPath = destPath + '.tmp_old'
+                let rotated = false
+                try {
+                    if (existsSync(destPath)) {
+                        if (existsSync(tempBackupPath)) {
+                            rmSync(tempBackupPath, { recursive: true, force: true })
+                        }
+                        renameSync(destPath, tempBackupPath)
+                        rotated = true
+                    }
+                } catch (e) {
+                    console.error('Failed to rotate backup folder:', e)
+                    // If rotation fails, we proceed with overwrite (progress might be inaccurate but backup still works)
+                }
+
+                // Start adb pull as a child process
+                const proc = spawn(this.adbPath, ['-s', serial, 'pull', '-a', source, destPath])
+                this.activePullProc = proc
+                let output = ''
+
+                proc.stdout.on('data', (chunk: Buffer) => { output += chunk.toString() })
+                proc.stderr.on('data', (chunk: Buffer) => { output += chunk.toString() })
+
+                // Poll destination size for progress
+                let lastPollSize = 0
+                let lastPollTime = Date.now()
+                let lastSpeed = ''
+                const folderStartTime = Date.now()
+
+                const pollInterval = setInterval(() => {
+                    try {
+                        const currentSize = this.getLocalDirSize(destPath)
+                        const now = Date.now()
+                        const deltaSec = (now - lastPollTime) / 1000
+
+                        // Calculate speed from delta
+                        if (deltaSec > 0) {
+                            const deltaBytes = currentSize - lastPollSize
+                            if (deltaBytes > 0) {
+                                lastSpeed = this.formatSpeed(deltaBytes / deltaSec)
+                            }
+                        }
+
+                        // Calculate percentage
+                        const overallPercent = remoteSize > 0
+                            ? Math.min(99, Math.round((currentSize / remoteSize) * 100))
+                            : 0
+
+                        // Calculate ETA from average transfer speed
+                        let etaStr = 'Calculating...'
+                        const elapsedSec = (now - folderStartTime) / 1000
+
+                        if (remoteSize > 0 && currentSize > 0 && elapsedSec > 0) {
+                            const avgBytesPerSec = currentSize / elapsedSec
+                            const remainingBytes = Math.max(0, remoteSize - currentSize)
+                            const etaSec = Math.ceil(remainingBytes / avgBytesPerSec)
+                            if (etaSec < 60) {
+                                etaStr = `~${etaSec}s remaining`
+                            } else {
+                                const m = Math.floor(etaSec / 60)
+                                const s = etaSec % 60
+                                etaStr = `~${m}m ${s}s remaining`
+                            }
+                        } else if (total > current) {
+                            etaStr = `${total - current} folders remaining`
+                        } else if (remoteSize === 0) {
+                            // If remote size failed, just show we are working
+                            etaStr = 'Transferring...'
+                        }
+
+                        // Find the file currently being written
+                        const latestFile = this.findLatestFile(destPath)
+                        const currentFileName = latestFile?.name || basename(source)
+
+                        onProgress?.({
+                            current,
+                            total,
+                            currentFile: currentFileName,
+                            speed: lastSpeed || 'Transferring...',
+                            eta: etaStr,
+                            overallPercent,
+                            filePercent: 0,
+                            elapsed: Math.floor((Date.now() - startTime) / 1000)
+                        })
+
+                        lastPollSize = currentSize
+                        lastPollTime = now
+                    } catch {
+                        // Ignore polling errors
+                    }
+                }, 500)
+
+                // Wait for process to complete
+                await new Promise<void>((resolve, reject) => {
+                    proc.on('close', (code) => {
+                        clearInterval(pollInterval)
+                        this.activePullProc = null
+                        if (this.pullCancelled) {
+                            // Rollback if cancelled
+                            if (rotated) {
+                                try {
+                                    if (existsSync(destPath)) rmSync(destPath, { recursive: true, force: true })
+                                    if (existsSync(tempBackupPath)) renameSync(tempBackupPath, destPath)
+                                } catch (e) { console.error('Rollback failed:', e) }
+                            }
+                            resolve()
+                        }
+                        else if (code === 0) {
+                            // Success: Cleanup old backup
+                            if (rotated && existsSync(tempBackupPath)) {
+                                try { rmSync(tempBackupPath, { recursive: true, force: true }) }
+                                catch (e) { console.error('Cleanup failed:', e) }
+                            }
+                            resolve()
+                        }
+                        else {
+                            // Failure: Rollback
+                            if (rotated) {
+                                try {
+                                    if (existsSync(destPath)) rmSync(destPath, { recursive: true, force: true })
+                                    if (existsSync(tempBackupPath)) renameSync(tempBackupPath, destPath)
+                                } catch (e) { console.error('Rollback failed:', e) }
+                            }
+                            reject(new Error(output || `adb pull exited with code ${code}`))
+                        }
+                    })
+                    proc.on('error', (err) => {
+                        clearInterval(pollInterval)
+                        this.activePullProc = null
+                        // Failure: Rollback
+                        if (rotated) {
+                            try {
+                                if (existsSync(destPath)) rmSync(destPath, { recursive: true, force: true })
+                                if (existsSync(tempBackupPath)) renameSync(tempBackupPath, destPath)
+                            } catch (e) { console.error('Rollback failed:', e) }
+                        }
+                        reject(err)
+                    })
+                })
+
+                if (this.pullCancelled) break
+
+                // Parse speed from final output
                 const speedMatch = output.match(/(\d+\.?\d*)\s*(MB\/s|KB\/s|B\/s)/)
-                const speed = speedMatch ? `${speedMatch[1]} ${speedMatch[2]}` : ''
+                const finalSpeed = speedMatch ? `${speedMatch[1]} ${speedMatch[2]}` : lastSpeed
 
                 onProgress?.({
                     current,
                     total,
-                    currentFile: source,
-                    speed,
-                    eta: current < total ? `${total - current} items remaining` : 'Finishing...'
+                    currentFile: `✓ ${basename(source)}`,
+                    speed: finalSpeed,
+                    eta: current < total ? `${total - current} folders remaining` : 'Finishing...',
+                    overallPercent: 100,
+                    filePercent: 100,
+                    elapsed: Math.floor((Date.now() - startTime) / 1000)
                 })
             } catch (error: unknown) {
                 const err = error as { message?: string }
@@ -275,7 +537,10 @@ export class AdbService {
             total: 1,
             currentFile: source,
             speed: 'Calculating...',
-            eta: 'Calculating...'
+            eta: 'Calculating...',
+            overallPercent: 0,
+            filePercent: 0,
+            elapsed: 0
         })
 
         try {
@@ -290,7 +555,10 @@ export class AdbService {
                 total: 1,
                 currentFile: source,
                 speed,
-                eta: 'Finishing...'
+                eta: 'Finishing...',
+                overallPercent: 100,
+                filePercent: 100,
+                elapsed: 0
             })
         } catch (error: unknown) {
             const err = error as { message?: string }

@@ -95,7 +95,8 @@ export class FileBrowser {
     }
 
     private parseListOutput(output: string, basePath: string): FileEntry[] {
-        const lines = output.split('\n').filter(line => line.trim())
+        // Normalize CRLF -> LF (Windows ADB outputs \r\n which breaks regex $ anchors)
+        const lines = output.replace(/\r\n/g, '\n').split('\n').filter(line => line.trim())
         const entries: FileEntry[] = []
 
         for (const line of lines) {
